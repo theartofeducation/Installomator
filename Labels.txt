@@ -33,6 +33,7 @@ aftermath
 aircall
 airflow
 airserver
+airstats
 airtable
 airtame
 airtamepkg
@@ -118,7 +119,6 @@ backgrounds
 balenaetcher
 balsamiqwireframes
 bambustudio
-bartender
 basecamp3
 baseline
 baseline-nodaemon
@@ -385,7 +385,6 @@ epicgameslauncher
 eposconnect
 epsonprintlayout
 escrowbuddy
-eshareosx
 espanso
 etrecheck
 etssecurebrowser
@@ -406,6 +405,7 @@ fathom
 favro
 fellow
 ffmpegmartinriedl
+ffprobemartinriedl
 fiddlereverywhere
 fierycommandworkstation
 figma
@@ -571,9 +571,11 @@ ipswupdater
 ipvisionconnect
 iriunwebcam
 isadora
+isixdicomviewer
 island
 istatmenus
 iterm2
+itspaint
 itsycal
 izotopeproductportal
 jabradirect
@@ -699,6 +701,7 @@ macfuse
 macoslaps
 macpass
 macports
+macshot
 mactex
 mactexbasic
 mactexfull
@@ -778,6 +781,7 @@ microsoftteamsnew
 microsoftteamsreset
 microsoftvisualstudiocode
 microsoftwindowsapp
+microsoftwindowsappbeta
 microsoftword
 microsoftwordreset
 midimonitor
@@ -788,6 +792,7 @@ miniconda
 minisim
 miro
 missive
+missiveapp
 mist
 mist-cli
 mixxx
@@ -954,6 +959,7 @@ promiseutilityr
 proofpointautoupdater
 propresenter7
 protondrive
+protonmail
 protonpass
 protonvpn
 proxyman
@@ -980,8 +986,8 @@ rawtherapee
 raycast
 realvncondemandassist
 realvncserver
-realvncviewer
 reaper
+recordist
 rectangle
 redcanarymacmonitor
 redgiant
@@ -1053,6 +1059,7 @@ sigil
 signal
 signiantapp
 silentknight
+silentknight3
 silnite
 sipgateclinq
 sirimote
@@ -1112,6 +1119,7 @@ starface10x
 starface90x
 starface91x
 stats
+stats
 steelseriesengine
 steinbergactivationmanager
 steinberglibrarymanager
@@ -1122,6 +1130,7 @@ subethaedit
 sublimemerge
 sublimetext
 suitestudio
+sunsama
 supercollider
 superhuman
 superwhisper
