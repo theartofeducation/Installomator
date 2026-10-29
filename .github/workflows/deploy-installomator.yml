@@ -1,0 +1,141 @@
+name: Deploy Installomator to Jamf Pro
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Validate script syntax
+        run: /bin/zsh -n Installomator.sh
+
+      - name: Verify Installomator responds
+        run: /bin/zsh Installomator.sh version
+
+  deploy:
+    needs: validate
+    runs-on: macos-latest
+    environment: jamf-production
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Obtain Jamf access token
+        id: jamf-auth
+        shell: bash
+        env:
+          JAMF_URL: ${{ secrets.JAMF_URL }}
+          JAMF_CLIENT_ID: ${{ secrets.JAMF_CLIENT_ID }}
+          JAMF_CLIENT_SECRET: ${{ secrets.JAMF_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+
+          response="$(
+            curl --silent --show-error --fail-with-body \
+              --request POST \
+              "${JAMF_URL%/}/api/v1/oauth/token" \
+              --header "Content-Type: application/x-www-form-urlencoded" \
+              --data-urlencode "grant_type=client_credentials" \
+              --data-urlencode "client_id=${JAMF_CLIENT_ID}" \
+              --data-urlencode "client_secret=${JAMF_CLIENT_SECRET}"
+          )"
+
+          token="$(jq -er '.access_token' <<< "$response")"
+          echo "::add-mask::$token"
+          echo "token=$token" >> "$GITHUB_OUTPUT"
+
+      - name: Retrieve current Jamf script
+        shell: bash
+        env:
+          JAMF_URL: ${{ secrets.JAMF_URL }}
+          JAMF_TOKEN: ${{ steps.jamf-auth.outputs.token }}
+          JAMF_SCRIPT_ID: ${{ vars.JAMF_SCRIPT_ID }}
+        run: |
+          set -euo pipefail
+
+          curl --silent --show-error --fail-with-body \
+            "${JAMF_URL%/}/api/v1/scripts/${JAMF_SCRIPT_ID}" \
+            --header "Authorization: Bearer ${JAMF_TOKEN}" \
+            --header "Accept: application/json" \
+            --output current-script.json
+      - name: Build Jamf script information and payload
+        shell: bash
+        run: |
+          set -euo pipefail
+      
+          version="$(
+            awk -F'"' '/^VERSION="/ { print $2; exit }' Installomator.sh
+          )"
+      
+          version_date="$(
+            awk -F'"' '/^VERSIONDATE="/ { print $2; exit }' Installomator.sh
+          )"
+      
+          debug="$(
+            awk -F= '/^DEBUG=/ {
+              gsub(/["[:space:]]/, "", $2)
+              print $2
+              exit
+            }' Installomator.sh
+          )"
+      
+          if [[ -z "$version" || -z "$version_date" || -z "$debug" ]]; then
+            echo "Unable to extract VERSION, VERSIONDATE, or DEBUG"
+            exit 1
+          fi
+      
+          formatted_date="$(
+            python3 -c \
+              'import datetime, sys; d=datetime.datetime.strptime(sys.argv[1], "%Y-%m-%d"); print(d.strftime("%A, %B %-d, %Y"))' \
+              "$version_date"
+          )"
+      
+          printf -v script_info '%s\n' \
+            "VERSION=\"${version}\"" \
+            "VERSIONDATE=\"${version_date}\"" \
+            "Date: ${formatted_date}" \
+            "DEBUG ${debug}" \
+            "WARNING: Test any command on a VM or test system first!" \
+            "See ReadMe located at:" \
+            "https://github.com/scriptingosx/Installomator" \
+            "Includes local label for setapp: installsetapp" \
+            "Includes local label for mtplx: mtplx"
+      
+          jq \
+            --rawfile contents Installomator.sh \
+            --arg info "$script_info" \
+            --arg commit "$GITHUB_SHA" \
+            '
+              .scriptContents = $contents
+              | .info = $info
+              | .notes = "Automatically deployed from Git commit \($commit)"
+              | del(.id)
+            ' \
+            current-script.json > updated-script.json
+
+      - name: Update Jamf script
+        shell: bash
+        env:
+          JAMF_URL: ${{ secrets.JAMF_URL }}
+          JAMF_TOKEN: ${{ steps.jamf-auth.outputs.token }}
+          JAMF_SCRIPT_ID: ${{ vars.JAMF_SCRIPT_ID }}
+        run: |
+          set -euo pipefail
+
+          curl --silent --show-error --fail-with-body \
+            --request PUT \
+            "${JAMF_URL%/}/api/v1/scripts/${JAMF_SCRIPT_ID}" \
+            --header "Authorization: Bearer ${JAMF_TOKEN}" \
+            --header "Accept: application/json" \
+            --header "Content-Type: application/json" \
+            --data-binary @updated-script.json
