@@ -1,0 +1,22 @@
+name: Validate Installomator fork
+
+on:
+  pull_request:
+  push:
+    branches:
+      - aoe-production
+
+permissions:
+  contents: read
+
+jobs:
+  assemble:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble from fragments
+        run: ./assemble.sh --script
+      - name: Validate generated script
+        run: zsh -n Installomator.sh
+      - name: Require committed generated files to match fragments
+        run: git diff --exit-code -- Installomator.sh Labels.txt
