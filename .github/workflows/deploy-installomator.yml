@@ -68,6 +68,7 @@ jobs:
             --header "Authorization: Bearer ${JAMF_TOKEN}" \
             --header "Accept: application/json" \
             --output current-script.json
+
       - name: Build Jamf script information and payload
         shell: bash
         run: |
